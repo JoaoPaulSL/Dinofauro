@@ -4,8 +4,8 @@ import random
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 from dino import Dino
 from obstacle import Obstacle
-from collections import deque  # Importando deque
-from sounds import SoundManager  # Importando o SoundManager
+from collections import deque
+from sounds import SoundManager
 
 class Game:
     def __init__(self, screen):
@@ -48,7 +48,7 @@ class Game:
             if event.type == self.spawn_obstacle_event:
                 self.spawn_obstacle()  # Chama o método de geração de obstáculos
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                if not self.dino.is_jumping and not self.game_over:  # Verifica se o dinossauro não está pulando e o jogo não está em game over
+                if not self.dino.is_jumping and not self.game_over:
                     self.dino.jump()
                     self.sound_manager.play_jump_sound()  # Toca som de pulo
             if self.game_over and event.type == pygame.KEYDOWN and event.key == pygame.K_r:
@@ -60,7 +60,6 @@ class Game:
         self.obstacles.append(obstacle)
 
     def update_game_state(self):
-        # Copiando a lista de obstáculos para iterar sem mutá-la diretamente
         for obstacle in list(self.obstacles):
             obstacle.move(self.obstacle_speed)
             print(f"Posição do obstáculo: {obstacle.rect.x}")  # Depuração para verificar posição do obstáculo
@@ -70,16 +69,13 @@ class Game:
                 self.game_over = True
 
             if obstacle.rect.x < -obstacle.rect.width:
-                # Remove o obstáculo que saiu da tela
                 self.obstacles.popleft()  # Remoção eficiente com deque
                 self.score += 5
                 print(f"Obstáculo removido. Posição final: {obstacle.rect.x}")  # Depuração para remoção
                  
-                # Aumenta a dificuldade com base na pontuação
                 if self.score % 300 == 0:
                     self.obstacle_speed += 1  # Aumenta a velocidade dos obstáculos
 
-        # Atualiza o recorde apenas se o jogo não estiver em game over
         if self.score > self.record and not self.game_over:
             self.record = self.score
 
