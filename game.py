@@ -4,6 +4,8 @@ import random
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 from dino import Dino
 from obstacle import Obstacle
+from collections import deque  # Importando deque
+from sounds import SoundManager  # Importando o SoundManager
 
 class Game:
     def __init__(self, screen):
@@ -11,7 +13,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.background = pygame.image.load("img/background.png").convert()
         self.dino = Dino()
-        self.obstacles = []
+        self.obstacles = deque()  # Usando deque para otimizar o gerenciamento de obstáculos
         self.score = 0
         self.record = 0
         self.obstacle_speed = 5
@@ -19,8 +21,11 @@ class Game:
         pygame.time.set_timer(self.spawn_obstacle_event, 2000)  # Geração de obstáculos a cada 2 segundos
         self.game_over = False
 
+        # Inicializa o gerenciador de som
+        self.sound_manager = SoundManager()
+
     def restart(self):
-        self.obstacles.clear()
+        self.obstacles.clear()  # Limpa todos os obstáculos ao reiniciar o jogo
         self.score = 0
         self.dino.rect.y = SCREEN_HEIGHT - 64
         self.dino.is_jumping = False
@@ -43,7 +48,9 @@ class Game:
             if event.type == self.spawn_obstacle_event:
                 self.spawn_obstacle()  # Chama o método de geração de obstáculos
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                self.dino.jump()
+                if not self.dino.is_jumping and not self.game_over:  # Verifica se o dinossauro não está pulando e o jogo não está em game over
+                    self.dino.jump()
+                    self.sound_manager.play_jump_sound()  # Toca som de pulo
             if self.game_over and event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                 self.restart()
 
@@ -53,14 +60,21 @@ class Game:
         self.obstacles.append(obstacle)
 
     def update_game_state(self):
-        for obstacle in self.obstacles:
+        # Copiando a lista de obstáculos para iterar sem mutá-la diretamente
+        for obstacle in list(self.obstacles):
             obstacle.move(self.obstacle_speed)
+            print(f"Posição do obstáculo: {obstacle.rect.x}")  # Depuração para verificar posição do obstáculo
+           
             if self.check_collision(self.dino, obstacle):
+                self.sound_manager.play_collision_sound()  # Toca som de colisão
                 self.game_over = True
-            if obstacle.rect.x < -obstacle.rect.width:
-                self.obstacles.remove(obstacle)
-                self.score += 5
 
+            if obstacle.rect.x < -obstacle.rect.width:
+                # Remove o obstáculo que saiu da tela
+                self.obstacles.popleft()  # Remoção eficiente com deque
+                self.score += 5
+                print(f"Obstáculo removido. Posição final: {obstacle.rect.x}")  # Depuração para remoção
+                 
                 # Aumenta a dificuldade com base na pontuação
                 if self.score % 300 == 0:
                     self.obstacle_speed += 1  # Aumenta a velocidade dos obstáculos
